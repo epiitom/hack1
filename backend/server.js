@@ -11,9 +11,16 @@ require('dotenv').config();
 // Initialize Express app
 const app = express();
 
+// Database configuration
+const DB_PATH = process.env.NODE_ENV === 'production' 
+  ? process.env.DATABASE_URL || './campus.db'
+  : './campus.db';
+
 // Configure CORS to allow requests from the React frontend
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174', 'http://localhost:3000'],
+  origin: process.env.NODE_ENV === 'production'
+    ? [process.env.FRONTEND_URL || 'https://your-frontend-domain.com']
+    : ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174', 'http://localhost:3000'],
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -21,12 +28,25 @@ app.use(cors({
 app.use(bodyParser.json());
 
 // Initialize Google Generative AI (Gemini)
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || ''); // Fallback to empty string if not found
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY.trim());
+
+// Test the Gemini API connection at startup
+async function testGeminiConnection() {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent("Hello");
+    console.log("Gemini API connection test successful");
+  } catch (error) {
+    console.error("Gemini API connection test failed:", error);
+  }
+}
+
+testGeminiConnection();
 
 // Connect to SQLite database
-const db = new sqlite3.Database('./campus.db', (err) => {
+const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) return console.error('Error connecting to database:', err.message);
-  console.log('Connected to the campus database.');
+  console.log(`Connected to the campus database at ${DB_PATH}`);
 
   initializeDatabase();
 });
@@ -66,11 +86,14 @@ function initializeDatabase() {
 // Seed initial location data
 function seedLocations() {
   const campusLocations = [
-    { id: "canteen", name: "Canteen", lat: 21.0052, lng: 79.0480, direction: "northern" },
-    { id: "library", name: "Library", lat: 21.0045, lng: 79.0482, direction: "eastern" },
-    { id: "auditorium", name: "Auditorium", lat: 21.0040, lng: 79.0478, direction: "southern" },
-    { id: "sports-complex", name: "Sports Complex", lat: 21.0055, lng: 79.0470, direction: "northwestern" },
-    { id: "admin-block", name: "Admin Block", lat: 21.0048, lng: 79.0473, direction: "central" }
+    { id: "block-b", name: "Block B", lat: 21.004756247708194, lng: 79.04765478207408, direction: "central" },
+    { id: "workshop", name: "Workshop", lat: 21.005351796207126, lng: 79.0481970314045, direction: "eastern" },
+    { id: "ground", name: "Ground", lat: 21.006691771676746, lng: 79.04887962765034, direction: "northeastern" },
+    { id: "boys-hostel", name: "Boys Hostel", lat: 21.007728011092887, lng: 79.04926877128744, direction: "northern" },
+    { id: "girls-hostel", name: "Girls Hostel", lat: 21.00787689547517, lng: 79.04815237560719, direction: "northwestern" },
+    { id: "block-a", name: "Block A", lat: 21.00561433171004, lng: 79.04747320303898, direction: "western" },
+    { id: "cafeteria", name: "Cafeteria", lat: 21.005862705999306, lng: 79.0481734648252, direction: "central" },
+    { id: "atm", name: "ATM", lat: 21.006186029415307, lng: 79.04681526123541, direction: "western" }
   ];
 
   db.run('DELETE FROM locations', [], (err) => {
@@ -127,7 +150,8 @@ app.post('/api/campus-guide', async (req, res) => {
 
     if (matchedLocation) {
       try {
-        const geminiModel = genAI.getGenerativeModel({ model: "gemini-pro" });
+        console.log("Attempting to generate response with Gemini API...");
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const prompt = `You are a witty and fun campus guide AI. Generate a creative, humorous, and engaging response (max 2 sentences) for a student asking about the ${matchedLocation.name} at St. Vincent Pallotti College.
         Include these facts in a fun way:
         - It's located in the ${matchedLocation.direction} part of campus
@@ -137,8 +161,9 @@ app.post('/api/campus-guide', async (req, res) => {
         
         For example, if it's the canteen, joke about food or hunger. If it's the library, joke about studying or books.`;
 
-        const result = await geminiModel.generateContent(prompt);
+        const result = await model.generateContent(prompt);
         const aiResponse = result.response.text();
+        console.log("Gemini API response:", aiResponse);
         
         return res.json({
           location: matchedLocation,
@@ -147,27 +172,40 @@ app.post('/api/campus-guide', async (req, res) => {
         });
       } catch (error) {
         console.error("Error with Gemini API:", error);
+        console.log("Falling back to pre-written responses");
         // Fallback to pre-written witty responses if API fails
         const wittyResponses = {
-          canteen: [
-            `Hungry? The ${matchedLocation.name} is your oasis in the ${matchedLocation.direction} part of campus! Follow your nose (and our map) to find the best campus food. 🍽️`,
-            `Ah, the ${matchedLocation.name}! Located in the ${matchedLocation.direction} area, it's where great minds go to refuel. Just don't blame us if you spend your entire scholarship on samosas! 🥘`
+          "block-b": [
+            `Welcome to Block B in the ${matchedLocation.direction} area! Where engineering dreams come to life, and occasionally where students come to question their life choices! 🏛️`,
+            `Block B, standing proudly in the ${matchedLocation.direction} part of campus - where future innovators gather (and sometimes nap between classes)! 🎓`
           ],
-          library: [
-            `The ${matchedLocation.name} awaits in the ${matchedLocation.direction} section - where silence is golden and knowledge is platinum! Don't forget to bring your reading glasses (and maybe a coffee). 📚`,
-            `Looking for a quiet escape? The ${matchedLocation.name} in the ${matchedLocation.direction} zone is your sanctuary. Just remember: snoring while studying is frowned upon! 🤓`
+          "workshop": [
+            `The Workshop in the ${matchedLocation.direction} zone is where ideas transform into reality! Just remember: safety goggles are your best fashion accessory! 🛠️`,
+            `Head to the ${matchedLocation.direction} area to find our Workshop - where we turn coffee into engineering marvels! ⚡`
           ],
-          auditorium: [
-            `Lights, camera, action! The ${matchedLocation.name} stands proudly in the ${matchedLocation.direction} area. It's where stars are born (or at least where they give presentations). 🎭`,
-            `Head to the ${matchedLocation.direction} side to find our magnificent ${matchedLocation.name}. It's like Broadway, but with more engineering presentations! 🎬`
+          "ground": [
+            `The Ground awaits in the ${matchedLocation.direction} part of campus - where engineers prove they can run as fast as their code compiles! 🏃‍♂️`,
+            `Need a break from debugging? Our spacious Ground in the ${matchedLocation.direction} area is perfect for both sports and dramatic "why won't my code work" moments! ⚽`
           ],
-          "sports-complex": [
-            `Game on! The ${matchedLocation.name} is pumping with energy in the ${matchedLocation.direction} zone. Where future engineers prove they're not just good with computers! 🏃‍♂️`,
-            `Need to burn off those canteen samosas? The ${matchedLocation.name} in the ${matchedLocation.direction} area is your fitness paradise! 🏋️‍♀️`
+          "boys-hostel": [
+            `The Boys Hostel stands in the ${matchedLocation.direction} zone - where future engineers master the art of cooking Maggi and doing laundry! 🏠`,
+            `Head ${matchedLocation.direction} to find the Boys Hostel - where sleep schedules are as theoretical as quantum physics! 😴`
           ],
-          "admin-block": [
-            `The ${matchedLocation.name} holds court in the ${matchedLocation.direction} part of campus. It's where all the magic (and paperwork) happens! ✨`,
-            `Looking for the big bosses? They're in the ${matchedLocation.name}, ${matchedLocation.direction} area. Don't worry, they don't bite... usually! 😉`
+          "girls-hostel": [
+            `The Girls Hostel in the ${matchedLocation.direction} area - where future tech leaders perfect both coding and corridor conversations! 🏢`,
+            `Located in the ${matchedLocation.direction} part, the Girls Hostel is where brilliant minds meet midnight snacks! 🌙`
+          ],
+          "block-a": [
+            `Block A holds court in the ${matchedLocation.direction} zone - where classroom adventures and engineering mysteries unfold! 🏛️`,
+            `Make your way to the ${matchedLocation.direction} side to find Block A - where every day is a new episode of "How I Met My Deadline"! 📚`
+          ],
+          "cafeteria": [
+            `Hungry? The Cafeteria in the ${matchedLocation.direction} area is your sanctuary of snacks and socializing! Where great minds eat alike! 🍽️`,
+            `Follow the aroma to our ${matchedLocation.direction} Cafeteria - where coffee and coding conversations create the perfect blend! ☕`
+          ],
+          "atm": [
+            `Need cash? The ATM stands ready in the ${matchedLocation.direction} part of campus - where your wallet goes to get CPR! 💳`,
+            `Head ${matchedLocation.direction} to find our ATM - the most popular spot right before mess fee deadlines! 💰`
           ]
         };
 
@@ -223,6 +261,46 @@ app.get('/api/college', (req, res) => {
     console.log('Returning college data');
     res.json(row);
   });
+});
+
+// Test endpoint to check locations
+app.get('/api/test-locations', (req, res) => {
+  db.all('SELECT * FROM locations', [], (err, rows) => {
+    if (err) {
+      console.error('Error fetching locations:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ 
+      message: 'Locations found in database',
+      locations: rows,
+      count: rows.length
+    });
+  });
+});
+
+// Test endpoint to check Gemini API
+app.get('/api/test-gemini', async (req, res) => {
+  try {
+    console.log("Testing Gemini API...");
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const prompt = "Explain how AI works in one short, fun sentence";
+    console.log("Sending prompt:", prompt);
+    const result = await model.generateContent(prompt);
+    const response = result.response.text();
+    console.log("Gemini API response:", response);
+    res.json({ 
+      message: 'Gemini API test successful',
+      response: response,
+      apiKey: process.env.GEMINI_API_KEY ? "API key is present" : "API key is missing"
+    });
+  } catch (error) {
+    console.error('Gemini API Error:', error);
+    res.status(500).json({ 
+      error: 'Gemini API test failed',
+      details: error.message,
+      apiKey: process.env.GEMINI_API_KEY ? "API key is present" : "API key is missing"
+    });
+  }
 });
 
 // Health check endpoint
