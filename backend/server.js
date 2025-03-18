@@ -218,21 +218,46 @@ app.post('/api/campus-guide', async (req, res) => {
           showMap: true
         });
       }
-    } else if (isLocationQuery) {
-      return res.json({
-        message: "I know this campus like the back of my hand! Try asking about the canteen (for those hunger emergencies), library (where dreams and deadlines meet), auditorium (our very own Broadway), sports complex (where future engineers turn into athletes), or admin block (the command center)!",
-        showMap: false
-      });
-    } else if (/\bhello\b|\bhi\b|\bhey\b/i.test(query)) {
-      return res.json({
-        message: "Hey there, campus explorer! 👋 I'm your friendly neighborhood guide, ready to help you navigate through our awesome campus. Where would you like to go today?",
-        showMap: false
-      });
     } else {
-      return res.json({
-        message: "I'm your campus navigation buddy! Try asking me things like 'Where's the canteen?' or 'How do I get to the library?' I promise to keep you entertained while showing you around! 🎯",
-        showMap: false
-      });
+      try {
+        // Handle general conversation
+        console.log("Attempting to generate general conversation response with Gemini API...");
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const prompt = `You are a friendly and witty campus guide AI assistant for St. Vincent Pallotti College. 
+        The student asked: "${query}"
+        
+        Respond in a fun, engaging way:
+        - Keep your response concise (max 2-3 sentences)
+        - Use emojis where appropriate
+        - Be helpful and friendly
+        - If they're asking about campus life, studies, or general college information, provide relevant advice
+        - If they're just chatting, be conversational and engaging
+        - If you're not sure about something, be honest and suggest they ask a faculty member
+        
+        Remember: You're a helpful campus guide, so keep responses relevant to college life!`;
+
+        const result = await model.generateContent(prompt);
+        const aiResponse = result.response.text();
+        console.log("Gemini API response:", aiResponse);
+        
+        return res.json({
+          message: aiResponse,
+          showMap: false
+        });
+      } catch (error) {
+        console.error("Error with Gemini API:", error);
+        // Fallback responses for general conversation
+        const fallbackResponses = [
+          "I'm here to help you with anything about campus life! Feel free to ask about locations, studies, or just chat! 😊",
+          "That's an interesting question! I'm your campus guide, so I can help you with directions, campus life, or just have a friendly chat! 🎓",
+          "I'm always happy to help! Whether you need directions, want to know about campus life, or just want to chat, I'm here for you! 🌟"
+        ];
+        const randomResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+        return res.json({
+          message: randomResponse,
+          showMap: false
+        });
+      }
     }
   });
 });

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { Button } from "@/components/ui/button";
+import { LoginForm } from "@/components/login-form";
 import './App.css';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -49,6 +50,9 @@ function App() {
   const [campusLocations, setCampusLocations] = useState<Location[]>([]);
   const [collegeInfo, setCollegeInfo] = useState<College | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [questionCount, setQuestionCount] = useState(0);
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -208,8 +212,23 @@ function App() {
     setInputValue("");
     setIsLoading(true);
     
+    // Increment question count
+    setQuestionCount(prev => {
+      const newCount = prev + 1;
+      if (newCount >= 3 && !isLoggedIn) {
+        setShowLoginForm(true);
+      }
+      return newCount;
+    });
+    
     // Process the message and generate a response
     processUserMessage(inputValue);
+  };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggedIn(true);
+    setShowLoginForm(false);
   };
 
   const processUserMessage = async (message: string) => {
@@ -276,6 +295,15 @@ function App() {
     <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-black to-gray-900">
       <BackgroundBeams className="absolute inset-0 z-0 opacity-50" />
       
+      {/* Login Form Modal */}
+      {showLoginForm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="w-full max-w-md mx-4">
+            <LoginForm className="bg-white" onSubmit={handleLogin} />
+          </div>
+        </div>
+      )}
+      
       <div className="relative z-10 w-full h-full flex flex-col md:flex-row">
         {/* Left Side: Chat Panel */}
         <div className={`${showMap ? 'md:w-1/2' : 'w-full'} h-full flex flex-col transition-all duration-300 ease-in-out`}>
@@ -283,6 +311,11 @@ function App() {
           <header className="py-4 text-center bg-black/40 backdrop-blur-sm border-b border-white/10 sticky top-0 z-10">
             <h1 className="text-3xl font-bold text-white tracking-wider">Campus Guide</h1>
             <p className="text-gray-300 mt-1">St. Vincent Pallotti College of Engineering</p>
+            {!isLoggedIn && (
+              <p className="text-sm text-gray-400 mt-2">
+                Questions remaining: {3 - questionCount}
+              </p>
+            )}
           </header>
 
           {/* Chat Interface */}

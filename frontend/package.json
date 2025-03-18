@@ -12,9 +12,11 @@
   "dependencies": {
     "@heroui/react": "2.7.5",
     "@iconify/react": "latest",
+    "@radix-ui/react-label": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.2",
     "@tailwindcss/vite": "^4.0.14",
     "@types/leaflet": "^1.9.8",
+    "axios": "^1.8.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
