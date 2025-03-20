@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
+// @ts-ignore - Will use later
 import { BackgroundBeams } from "@/components/ui/background-beams";
 import { Button } from "@/components/ui/button";
+
 import { LoginForm } from "@/components/login-form";
 import './App.css';
 import L from 'leaflet';
