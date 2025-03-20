@@ -1,0 +1,8 @@
+{
+  "name": "campus-navigator",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "build": "cd backend && npm install"
+  }
+} 
