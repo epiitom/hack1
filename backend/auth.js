@@ -1,5 +1,16 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const express = require('express');
+const cors = require('cors');
+
+const app = express();
+
+// Add CORS middleware
+app.use(cors({
+  origin: ['http://localhost:5174', 'http://localhost:5173'], // Add your frontend URLs
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // In a real application, this would be in a database
 const users = [];

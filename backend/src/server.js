@@ -344,7 +344,7 @@ app.get('/api/health', (req, res) => {
 
 // Root route to verify the server is working
 app.get('/', (req, res) => {
-  res.json({ message: 'Server is running' });
+  res.send('Campus Guide API Server is running. Use /api/health to check status.');
 });
 
 // Serve static files from the React frontend app
@@ -353,6 +353,16 @@ app.use(express.static(path.join(__dirname, '../frontend/dist')));
 // Handle any requests that don't match the above
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+});
+
+// Simple auth route (added alongside existing functionality)
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  if (email === 'admin' && password === 'password123') {
+    res.json({ success: true, message: 'Login successful' });
+  } else {
+    res.status(401).json({ success: false, message: 'Invalid credentials' });
+  }
 });
 
 // Start the server
@@ -372,4 +382,4 @@ process.on('SIGINT', () => {
     console.log('Database connection closed');
     process.exit(0);
   });
-});
+})
