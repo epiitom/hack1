@@ -46,6 +46,7 @@ function App() {
   const [showMap, setShowMap] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [campusLocations, setCampusLocations] = useState<Location[]>([]);
+  // @ts-ignore - Will use later
   const [collegeInfo, setCollegeInfo] = useState<College | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [questionCount, setQuestionCount] = useState(0);
