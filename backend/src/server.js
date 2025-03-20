@@ -23,13 +23,12 @@ const DB_PATH = process.env.NODE_ENV === 'production'
   : './campus.db';
 
 // Configure CORS to allow requests from the React frontend
+// Configure CORS to allow requests from the React frontend
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? [process.env.FRONTEND_URL || 'https://your-frontend-domain.com']
-    : ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174', 'http://localhost:3000'],
+  origin: 'https://campusguide1.onrender.com',
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-   credentials: true 
+  credentials: true
 }));
 
 app.use(bodyParser.json());
