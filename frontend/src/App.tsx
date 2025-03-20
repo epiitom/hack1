@@ -5,6 +5,8 @@ import { LoginForm } from "@/components/login-form";
 import './App.css';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { API_BASE_URL } from './config/api';
+import BasicLogin from './components/BasicLogin';
 
 // Fix for default marker icons in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -13,9 +15,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
-
-// API base URL - adjust this to match your backend server location
-const API_BASE_URL = 'http://localhost:3001';
 
 interface Message {
   id: string;
@@ -53,6 +52,7 @@ function App() {
   const [questionCount, setQuestionCount] = useState(0);
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -196,6 +196,20 @@ function App() {
       }
     };
   }, [showMap, selectedLocation, userLocation, campusLocations]);
+
+  useEffect(() => {
+    // Verify token on load
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch(`${API_BASE_URL}/api/users/verify`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => res.ok && setIsAuthenticated(true))
+      .catch(() => localStorage.removeItem('token'));
+    }
+  }, []);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,19 +1,42 @@
 import { useState } from 'react';
+import { API_BASE_URL } from '../config/api';
 
-function BasicLogin() {
+interface BasicLoginProps {
+  onLoginSuccess: () => void;
+}
+
+function BasicLogin({ onLoginSuccess }: BasicLoginProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Simple credential check
-    if (username === 'admin' && password === 'password') {
-      alert('Login successful!');
-      // You can redirect here if needed
-      // window.location.href = '/dashboard';
-    } else {
-      alert('Invalid credentials! Try admin/password');
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: username, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      localStorage.setItem('token', data.token);
+      onLoginSuccess();
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
     }
   };
 
