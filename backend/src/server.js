@@ -344,7 +344,7 @@ app.get('/api/health', (req, res) => {
 
 // Root route to verify the server is working
 app.get('/', (req, res) => {
-  res.send('Campus Guide API Server is running. Use /api/health to check status.');
+  res.json({ message: 'Server is running' });
 });
 
 // Serve static files from the React frontend app
