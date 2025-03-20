@@ -7,6 +7,8 @@ const sqlite3 = require('sqlite3').verbose();
 const bodyParser = require('body-parser');
 const cors = require('cors');
 require('dotenv').config();
+const userRoutes = require('./routes/userRoutes');
+const path = require('path');
 
 // Initialize Express app
 const app = express();
@@ -26,6 +28,7 @@ app.use(cors({
 }));
 
 app.use(bodyParser.json());
+app.use('/api/users', userRoutes);
 
 // Initialize Google Generative AI (Gemini)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY.trim());
@@ -93,7 +96,8 @@ function seedLocations() {
     { id: "girls-hostel", name: "Girls Hostel", lat: 21.00787689547517, lng: 79.04815237560719, direction: "northwestern" },
     { id: "block-a", name: "Block A", lat: 21.00561433171004, lng: 79.04747320303898, direction: "western" },
     { id: "cafeteria", name: "Cafeteria", lat: 21.005862705999306, lng: 79.0481734648252, direction: "central" },
-    { id: "atm", name: "ATM", lat: 21.006186029415307, lng: 79.04681526123541, direction: "western" }
+    { id: "atm", name: "ATM", lat: 21.006186029415307, lng: 79.04681526123541, direction: "western" },
+    { id:"chatrapatti chowk", name : "chatrapatti chowk", lat:21.1112, lng:79.0688, direction : "northeast" }
   ];
 
   db.run('DELETE FROM locations', [], (err) => {
@@ -337,6 +341,14 @@ app.get('/api/health', (req, res) => {
 // Root route to verify the server is working
 app.get('/', (req, res) => {
   res.send('Campus Guide API Server is running. Use /api/health to check status.');
+});
+
+// Serve static files from the React frontend app
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+// Handle any requests that don't match the above
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 });
 
 // Start the server

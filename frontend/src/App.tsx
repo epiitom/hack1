@@ -36,7 +36,7 @@ interface College {
   id: number;
   name: string;
   lat: number;
-  lng: number;
+  lng: number;  
 }
 
 function App() {
