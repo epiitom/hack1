@@ -305,7 +305,7 @@ function App() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-black to-gray-900">
-    //  <BackgroundBeams className="absolute inset-0 z-0 opacity-50" />
+      {/* <BackgroundBeams className="absolute inset-0 z-0 opacity-50" /> */}
       
       {/* Login Form Modal */}
       {showLoginForm && (
