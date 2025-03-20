@@ -13,6 +13,10 @@ const path = require('path');
 // Initialize Express app
 const app = express();
 
+// Use __dirname for file paths
+const dbPath = path.join(__dirname, 'campus.db');
+const envPath = path.join(__dirname, '.env');
+
 // Database configuration
 const DB_PATH = process.env.NODE_ENV === 'production' 
   ? process.env.DATABASE_URL || './campus.db'
@@ -352,7 +356,7 @@ app.get('*', (req, res) => {
 });
 
 // Start the server
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Health check available at http://localhost:${PORT}/api/health`);
